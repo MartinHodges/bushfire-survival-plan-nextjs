@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+#kind: Deployment
+metadata:
+  name: bfp-app
+  namespace: bushfire-plan
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bfp-app
+  template:
+    metadata:
+      labels:
+        app: bfp-app
+    spec:
+      containers:
+      - name: bfp-app
+        image: <<docker_user>>/bfp-app:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: BACKEND_WS_URL
+          value: "ws://bushfire-plan-service.bushfire-plan.svc.cluster.local:8000"
+        - name: PDF_SERVICE_URL
+          value: "http://<<PDF generator service>>/generate-pdf"
+---
+apiVersion: v13
+kind: Service
+metadata:
+  name: bfp-service
+  namespace: bushfire-plan
+spec:
+  selector:
+    app: bfp-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
