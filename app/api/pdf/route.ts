@@ -1,12 +1,10 @@
 import { NextRequest } from 'next/server';
+import { log } from '@/utils/logging';
 
 export async function POST(request: NextRequest) {
   try {
     const html = await request.text();
     const pdfServiceUrl = `${process.env.PDF_SERVICE_URL || 'http://localhost:3080/generate-pdf'}`;
-    
-    console.log('PDF service URL:', pdfServiceUrl);
-    console.log('HTML length:', html.length);
     
     const response = await fetch(pdfServiceUrl, {
       method: 'POST',
@@ -14,16 +12,16 @@ export async function POST(request: NextRequest) {
       body: html
     });
     
-    console.log('PDF service response status:', response.status);
+    log(`PDF service response status: ${response.status}`);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('PDF service error:', errorText);
+      log(`PDF service error: ${errorText}`);
       return new Response(`PDF generation failed: ${errorText}`, { status: 500 });
     }
     
     const pdfBuffer = await response.arrayBuffer();
-    console.log('PDF buffer size:', pdfBuffer.byteLength);
+    log(`PDF buffer size: ${pdfBuffer.byteLength}`);
     
     return new Response(pdfBuffer, {
       headers: {
@@ -32,7 +30,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('PDF API error:', error);
+    log(`PDF API error: ${JSON.stringify(error)}`);
     return new Response(`PDF generation error: ${error}`, { status: 500 });
   }
 }

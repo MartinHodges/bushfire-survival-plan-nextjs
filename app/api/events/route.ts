@@ -1,33 +1,55 @@
 import { NextRequest } from 'next/server';
-
-const clients = new Map<string, ReadableStreamDefaultController>();
-const messageQueues = new Map<string, object[]>();
+import { log } from '@/utils/logging';
+import { addSSEConnection, removeSSEConnection, formatSSEMessage, getLastMessage, ensureOutgoingSubscription } from '@/utils/redis';
 
 export async function GET(request: NextRequest) {
-  const sessionId = request.nextUrl.searchParams.get('sessionId') || Date.now().toString();
-  console.log(`[${new Date().toISOString()}] SSE GET request for session: ${sessionId}`);
+  const sessionId = request.nextUrl.searchParams.get('sessionId') || '';
+  const connectionId = crypto.randomUUID(); // Generate server-side only
+  log(`SSE GET request - sessionId: ${sessionId}`);
+  
+  let messageCallback: ((message: any) => void) | null = null;
   
   const stream = new ReadableStream({
-    start(controller) {
-      console.log(`[${new Date().toISOString()}] SSE controller created for session: ${sessionId}`);
-      clients.set(sessionId, controller);
-      controller.enqueue(`data: ${JSON.stringify({ type: 'connected', sessionId })}\n\n`);
-      
-      // Send any queued messages
-      const queue = messageQueues.get(sessionId) || [];
-      queue.forEach(message => {
-        try {
-          controller.enqueue(`data: ${JSON.stringify(message)}\n\n`);
-        } catch (e) {
-          console.error(`[${new Date().toISOString()}] SSE enqueue error for queued message:`, e);
-        }
-      });
-      messageQueues.delete(sessionId);
-      
+    start: async (controller) => {
+      try {
+        log(`(${connectionId}) SSE controller created`);
+        
+        // Ensure outgoing subscription is active
+        await ensureOutgoingSubscription();
+        
+        // Add SSE connection callback
+        messageCallback = (message: any) => {
+          try {
+            controller.enqueue(formatSSEMessage(message));
+          } catch (error) {
+            log(`(${connectionId}) Error processing message: ${JSON.stringify(error)}`);
+          }
+        };
+        
+        addSSEConnection(sessionId, messageCallback);
+        
+        // Send initial connection message
+        controller.enqueue(formatSSEMessage({ 
+          type: 'connected', 
+          connectionId, 
+          sessionId 
+        }));
+        
+        // Send last message if it exists
+        // const lastMessage = await getLastMessage(sessionId);
+        // if (lastMessage) {
+        //   controller.enqueue(formatSSEMessage(lastMessage));
+        // }
+      } catch (error) {
+        console.error(`[${new Date().toISOString()}] BFF SSE error: ${JSON.stringify(error)}`);
+      }
     },
     cancel() {
-      console.log(`[${new Date().toISOString()}] SSE controller cancelled for session: ${sessionId}`);
-      clients.delete(sessionId);
+      log(`(${connectionId}) BFF controller cancelled`);
+      // Remove SSE connection
+      if (messageCallback) {
+        removeSSEConnection(sessionId, messageCallback);
+      }
     }
   });
 
@@ -42,27 +64,6 @@ export async function GET(request: NextRequest) {
     },
   });
   
-  console.log(`SSE response created for session: ${sessionId}`);
+  log(`(${connectionId}) SSE response created - sessionId: ${sessionId}`);
   return response;
-}
-
-export function sendToClient(sessionId: string, data: object) {
-  const controller = clients.get(sessionId);
-  console.log('SSE sendToClient - sessionId:', sessionId, 'hasController:', !!controller);
-  console.log('Active sessions:', Array.from(clients.keys()));
-  if (controller) {
-    const message = `data: ${JSON.stringify(data)}\n\n`;
-    console.log(`SSE sending:[${new Date().toISOString()}]`, message);
-    try {
-      controller.enqueue(message);
-    } catch (error) {
-      console.error('SSE enqueue error:', error);
-      clients.delete(sessionId);
-    }
-  } else {
-    console.log('No SSE controller found for session:', sessionId, '- queuing message');
-    const queue = messageQueues.get(sessionId) || [];
-    queue.push(data);
-    messageQueues.set(sessionId, queue.slice(-5)); // Keep last 5 messages
-  }
 }
