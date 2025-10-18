@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { log } from '@/utils/logging';
-import { addSSEConnection, removeSSEConnection, formatSSEMessage, getLastMessage, ensureOutgoingSubscription } from '@/utils/redis';
+import { addSSEConnection, removeSSEConnection, formatSSEMessage, ensureOutgoingSubscription } from '@/utils/redis';
 
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get('sessionId') || '';
@@ -35,11 +35,6 @@ export async function GET(request: NextRequest) {
           sessionId 
         }));
         
-        // Send last message if it exists
-        // const lastMessage = await getLastMessage(sessionId);
-        // if (lastMessage) {
-        //   controller.enqueue(formatSSEMessage(lastMessage));
-        // }
       } catch (error) {
         console.error(`[${new Date().toISOString()}] BFF SSE error: ${JSON.stringify(error)}`);
       }

@@ -59,29 +59,10 @@ export function formatSSEMessage(message: any): string {
 }
 
 
-export async function setLastMessage(sessionId: string, message: any) {
-  // try {
-  //   await redis.set(`session:${sessionId}:lastMessage`, JSON.stringify(message));
-  // } catch (error) {
-  //   log(`Redis setLastMessage error: ${JSON.stringify(error)}`);
-  // }
-}
-
-export async function getLastMessage(sessionId: string): Promise<any | null> {
-  // try {
-  //   const message = await redis.get(`session:${sessionId}:lastMessage`);
-  //   return message ? JSON.parse(message) : null;
-  // } catch (error) {
-  //   log(`Redis getLastMessage error: ${JSON.stringify(error)}`);
-  //   return null;
-  // }
-  return null
-}
-
 export async function sendMessageToConnections(sessionId: string, message: any) {
   try {
-    // Store as last message first
-    await setLastMessage(sessionId, message);
+    // // Store as last message first
+    // await setLastMessage(sessionId, message);
     
     // Send directly to SSE connections
     const connections = sseConnections.get(sessionId);
