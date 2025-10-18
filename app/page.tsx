@@ -7,11 +7,20 @@ import { useRouter } from 'next/navigation'
 const createSlug = (name: string): string => {
   return name
     .toLowerCase()
-    .trim()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single
     .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+}
+
+// This is different to createSlug as we want the user to be able to enter
+// spaces and hyphens freely when typing the plan name
+const sanitize = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-_]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
 }
 
 const buttonClass = "bg-blue-500 hover:bg-blue-800 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors"
@@ -23,16 +32,10 @@ export default function Home() {
   const [planId, setPlanId] = useState('')
   const [newPlanName, setNewPlanName] = useState('')
 
-  const createNewPlan = () => {
-    if (newPlanName.trim()) {
-      const slug = createSlug(newPlanName)
-      router.push(`/plan/${slug}`)
-    }
-  }
-
-  const openExistingPlan = () => {
+  const gotoPlan = (planId: string) => {
     if (planId.trim()) {
-      router.push(`/plan/${planId.trim()}`)
+      const slug = createSlug(planId)
+      router.push(`/plan/${slug}`)
     }
   }
 
@@ -60,15 +63,15 @@ export default function Home() {
               type="text"
               value={newPlanName}
               onChange={(e) => {
-                const sanitizedInput = e.target.value.replace(/ /g, '-').replace(/[^\w-]/g, '');
+                const sanitizedInput = sanitize(e.target.value);
                 setNewPlanName(sanitizedInput);
               }}
               placeholder="e.g., Home Plan, Farm Plan, Holiday House"
               className="w-full p-2 border rounded mb-3"
-              onKeyDown={(e) => e.key === 'Enter' && createNewPlan()}
+              onKeyDown={(e) => e.key === 'Enter' && gotoPlan(newPlanName)}
             />
             <button 
-              onClick={createNewPlan} 
+              onClick={() => gotoPlan(newPlanName)} 
               disabled={!newPlanName.trim()}
               className={`${buttonClass} ${!newPlanName.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -83,15 +86,15 @@ export default function Home() {
               type="text"
               value={planId}
               onChange={(e) => {
-                const sanitizedInput = e.target.value.replace(/ /g, '-').replace(/[^\w-]/g, '');
+                const sanitizedInput = sanitize(e.target.value);
                 setPlanId(sanitizedInput);
               }}
               placeholder="Enter plan ID"
               className="w-full p-2 border rounded mb-3"
-              onKeyDown={(e) => e.key === 'Enter' && openExistingPlan()}
+              onKeyDown={(e) => e.key === 'Enter' && gotoPlan(planId)}
             />
             <button 
-              onClick={openExistingPlan} 
+              onClick={() => gotoPlan(planId)} 
               disabled={!planId.trim()}
               className={`${buttonClass} ${!planId.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
