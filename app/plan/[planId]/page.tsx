@@ -117,17 +117,6 @@ export default function BushfirePlan() {
           setView('start_planning')
           setCurrentSection('Plan Setup')
           break
-        case 'session_ready':
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current)
-            timeoutRef.current = null
-          }
-          if (message.needs_setup) {
-            setView('start_planning')
-          } else {
-            setView('analysing')
-          }
-          break
         case 'questions':
           setQuestionsData({ questions: message.questions, section: message.section })
           setView('questions')
