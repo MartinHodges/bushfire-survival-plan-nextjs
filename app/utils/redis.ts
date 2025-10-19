@@ -15,13 +15,8 @@ const redisConfig = {
 };
 
 // Create three Redis clients for different purposes
-const redis = new Redis(redisConfig);          // For regular operations
 const redisPub = new Redis(redisConfig);       // For publishing
 const redisSub = new Redis(redisConfig);       // For subscribing
-
-redis.on('error', (error) => {
-  console.error('Redis operations error:', error);
-});
 
 redisPub.on('error', (error) => {
   console.error('Redis publisher error:', error);
