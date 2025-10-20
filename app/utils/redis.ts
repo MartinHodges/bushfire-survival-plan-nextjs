@@ -27,9 +27,9 @@ redisSub.on('error', (error) => {
 })
 
 // Store SSE connections by session ID
-const sseConnections = new Map<string, Set<(message: any) => void>>()
+const sseConnections = new Map<string, Set<(message: unknown) => void>>()
 
-export function addSSEConnection(sessionId: string, callback: (message: any) => void) {
+export function addSSEConnection(sessionId: string, callback: (message: unknown) => void) {
   if (!sseConnections.has(sessionId)) {
     sseConnections.set(sessionId, new Set())
   }
@@ -37,7 +37,7 @@ export function addSSEConnection(sessionId: string, callback: (message: any) => 
   log(`Added SSE connection for session ${sessionId}`)
 }
 
-export function removeSSEConnection(sessionId: string, callback: (message: any) => void) {
+export function removeSSEConnection(sessionId: string, callback: (message: unknown) => void) {
   const connections = sseConnections.get(sessionId)
   if (connections) {
     connections.delete(callback)
@@ -49,12 +49,12 @@ export function removeSSEConnection(sessionId: string, callback: (message: any) 
 }
 
 // Helper to format SSE message
-export function formatSSEMessage(message: any): string {
+export function formatSSEMessage(message: unknown): string {
   return `data: ${JSON.stringify(message)}\n\n`
 }
 
 
-export async function sendMessageToConnections(sessionId: string, message: any) {
+export async function sendMessageToConnections(sessionId: string, message: unknown) {
   try {
     // // Store as last message first
     // await setLastMessage(sessionId, message)
@@ -82,7 +82,7 @@ export async function sendMessageToConnections(sessionId: string, message: any) 
 }
 
 // Publish message to incoming channel (BFF -> Backend)
-export async function publishToIncomingStream(message: any) {
+export async function publishToIncomingStream(message: unknown) {
   try {
     await redisPub.publish('backend_inbound', JSON.stringify(message))
     log(`Published to backend_inbound channel: ${JSON.stringify(message)}`)

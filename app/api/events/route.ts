@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const connectionId = crypto.randomUUID(); // Generate server-side only
   log(`SSE GET request - sessionId: ${sessionId}`);
   
-  let messageCallback: ((message: any) => void) | null = null;
+  let messageCallback: ((message: unknown) => void) | null = null;
   
   const stream = new ReadableStream({
     start: async (controller) => {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         await ensureOutgoingSubscription();
         
         // Add SSE connection callback
-        messageCallback = (message: any) => {
+        messageCallback = (message: unknown) => {
           try {
             controller.enqueue(formatSSEMessage(message));
           } catch (error) {
