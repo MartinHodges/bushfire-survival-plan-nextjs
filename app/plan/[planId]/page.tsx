@@ -138,8 +138,6 @@ export default function BushfirePlan() {
           break
       }
     }
-    
-    // Don't cleanup on dependency changes to prevent Fast Refresh issues
   }, [sessionId])
 
   // Final cleanup on component unmount
