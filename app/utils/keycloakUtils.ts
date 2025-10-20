@@ -11,11 +11,22 @@ interface KeycloakTokenPayload extends jose.JWTPayload {
 }
 
 // Configuration details from your environment variables
-const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER_URL;
-const KEYCLOAK_AUDIENCE = process.env.KEYCLOAK_CLIENT_ID;
+let cachedConfig: { KEYCLOAK_ISSUER: string; KEYCLOAK_AUDIENCE: string } | null = null;
 
-if (!KEYCLOAK_ISSUER || !KEYCLOAK_AUDIENCE) {
-  throw new Error("Missing Keycloak environment variables.");
+function getKeycloakConfig() {
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER_URL;
+  const KEYCLOAK_AUDIENCE = process.env.KEYCLOAK_CLIENT_ID;
+
+  if (!KEYCLOAK_ISSUER || !KEYCLOAK_AUDIENCE) {
+    throw new Error("Missing Keycloak environment variables.");
+  }
+
+  cachedConfig = { KEYCLOAK_ISSUER, KEYCLOAK_AUDIENCE };
+  return cachedConfig;
 }
 
 /**
@@ -25,6 +36,8 @@ if (!KEYCLOAK_ISSUER || !KEYCLOAK_AUDIENCE) {
  */
 export async function verifyKeycloakToken(token: string): Promise<string | null> {
   try {
+    const { KEYCLOAK_ISSUER, KEYCLOAK_AUDIENCE } = getKeycloakConfig();
+    
     // 1. Setup the JWKS fetcher (Public Key Set)
     // The createRemoteJWKSet function fetches and caches the public keys from Keycloak's jwks_uri.
     const jwksUrl = new URL(KEYCLOAK_ISSUER + '/protocol/openid-connect/certs');
