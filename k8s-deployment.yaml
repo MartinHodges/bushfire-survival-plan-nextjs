@@ -1,6 +1,5 @@
 apiVersion: apps/v1
-kind: StatefulSet
-#kind: Deployment
+kind: Deployment
 metadata:
   name: bfp-app
   namespace: bushfire-plan
@@ -24,6 +23,25 @@ spec:
           value: "ws://bushfire-plan-service.bushfire-plan.svc.cluster.local:8000"
         - name: PDF_SERVICE_URL
           value: "http://<<PDF generator service>>/generate-pdf"
+        - name: USE_DEV_AUTH
+          value: "false"
+        - name: KEYCLOAK_ISSUER_URL
+          value: "http://<<Keycloak service domain>>/auth/realms/<<your realm>>"
+        - name: KEYCLOAK_CLIENT_ID
+          value: "<<client id>>"
+        - name: REDIS_HOST
+          value: "<<Redis service domain>>"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_USERNAME
+          value: "<<Redis username or 'default'>>"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: redis-pw
+        - name: REDIS_TLS
+          value: "false"
 ---
 apiVersion: v13
 kind: Service
