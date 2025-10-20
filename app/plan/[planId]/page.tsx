@@ -233,7 +233,9 @@ export default function BushfirePlan() {
     let text = html.join('')
     
     // Remove existing html, head, body tags and extract content
-    text = text.replace(/<\/?html[^>]*>/gi, '')
+    text = text.replace(/```/gi,'')
+                .replace(/html<!DOCTYPE html>/gi, '')
+                .replace(/<\/?html[^>]*>/gi, '')
                 .replace(/<\/?head[^>]*>/gi, '')
                 .replace(/<\/?body[^>]*>/gi, '')
                 .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
