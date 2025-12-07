@@ -13,14 +13,15 @@ export async function GET(request: NextRequest) {
     }
     
     // Production: Extract user ID from OAuth token
-    const authHeader = request.headers.get('authorization')
+    const authHeader = request.headers.get('x-auth-request-access-token')
     if (!authHeader) {
+      console.log('No authorization header found')
       return Response.json({ error: 'No authorization header' }, { status: 401 })
     }
     
     // Extract JWT token and decode (simplified - in production use proper JWT library)
     const token = authHeader.replace('Bearer ', '')
-    
+
     const subject = await verifyKeycloakToken(token)
     if (subject) {
       // Token is valid! Now you have the user ID/Subject

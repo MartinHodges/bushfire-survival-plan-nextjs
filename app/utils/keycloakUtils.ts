@@ -19,7 +19,7 @@ function getKeycloakConfig() {
   }
 
   const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER_URL;
-  const KEYCLOAK_AUDIENCE = process.env.KEYCLOAK_CLIENT_ID;
+  const KEYCLOAK_AUDIENCE = 'account' // Note that this would normally be process.env.KEYCLOAK_CLIENT_ID but the audience now defaults to account
 
   if (!KEYCLOAK_ISSUER || !KEYCLOAK_AUDIENCE) {
     throw new Error("Missing Keycloak environment variables.");
