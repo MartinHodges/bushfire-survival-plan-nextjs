@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bushfire-plan-api
+  namespace: bushfire-plan
+  labels:
+    app: bushfire-plan-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bushfire-plan-api
+  template:
+    metadata:
+      labels:
+        app: bushfire-plan-api
+    spec:
+      containers:
+      - name: bushfire-plan-api
+        image: martinhodges/bushfire-plan-api:latest
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openai-secret
+              key: api-key
+        - name: USE_MOCK_LLM
+          value: "false"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: redis-pw
+        - name: REDIS_SERVICE
+          value: "kates-storage.home.b30"
+        - name: POSTGRES_HOST
+          value: "kates-storage.home.b30"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: "bushfire_plan"
+        - name: POSTGRES_USER
+          value: "bfp_agent"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-pw

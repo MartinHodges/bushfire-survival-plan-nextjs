@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bfp-app
+  namespace: bushfire-plan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bfp-app
+  template:
+    metadata:
+      labels:
+        app: bfp-app
+    spec:
+      imagePullSecrets:
+       - name: registrypullsecret
+      containers:
+        - name: bfp-app
+          image: martinhodges/bfp-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: BACKEND_WS_URL
+              value: "ws://bushfire-plan-service.bushfire-plan.svc.cluster.local:8000/ws"
+            - name: PDF_SERVICE_URL
+              value: "http://kates-storage:3080/generate-pdf"
+            - name: USE_DEV_AUTH
+              value: "false"
+            - name: KEYCLOAK_ISSUER_URL
+              value: "https://iam.b30.online/realms/bushfire-plan"
+            - name: KEYCLOAK_CLIENT_ID
+              value: "apisix"
+            - name: REDIS_HOST
+              value: "kates-storage.home.b30"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_USERNAME
+              value: "default"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: redis-pw
+            - name: REDIS_TLS
+              value: "false"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bfp-service
+  namespace: bushfire-plan
+spec:
+  selector:
+    app: bfp-app
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000

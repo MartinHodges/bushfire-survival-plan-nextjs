@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oauth2-proxy-secrets
+  namespace: bushfire-plan
+type: Opaque
+stringData:
+  # Note that both of these have to be raw strings. The cookie-secret must be 16, 24 or 32 bytes
+  client-secret: <Client secret
+  # LC_ALL=C tr -dc 'A-Za-z0-9~!@#$%^&*()_+`-={}[]|:;<>?,./' </dev/urandom | head -c 32
+  cookie-secret: <Cookie secret>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: bushfire-plan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      containers:
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1
+        args:
+          - --provider=oidc
+          - --client-id=apisix
+          - --client-secret=$(OAUTH2_PROXY_CLIENT_SECRET)
+          - --redirect-url=https://bfp.b30.online/oauth2/callback
+#          - --upstream=http://bfp-ui..bushfire-plan.svc.cluster.local:80 omit in order to use the proxy for authentication only
+          - --cookie-secret=$(OAUTH2_PROXY_COOKIE_SECRET)
+          - --cookie-secure=true
+          - --cookie-httponly=true
+          - --cookie-samesite=lax
+          - --cookie-domain=.b30.online
+#          - --cookie-expires=24h Unsupported
+          - --scope=openid email profile
+          - --oidc-issuer-url=https://iam.b30.online/realms/bushfire-plan
+          - --skip-provider-button=true
+          - --http-address=0.0.0.0:4180
+          - --email-domain=*
+          - --pass-access-token=true
+          - --pass-user-headers=true
+          - --reverse-proxy=true
+          - --skip-auth-route=true
+          - --set-xauthrequest=true
+#          - --pass-id-token=true Unsupported
+#          - --set-xauthrequest-preferred-username=true Unsupported
+#          - ----set-xauthrequest-email=true Unsupported
+        env:
+          - name: OAUTH2_PROXY_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: oauth2-proxy-secrets
+                key: client-secret
+          - name: OAUTH2_PROXY_COOKIE_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: oauth2-proxy-secrets
+                key: cookie-secret
+        ports:
+          - containerPort: 4180
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: bushfire-plan
+spec:
+  selector:
+    app: oauth2-proxy
+  ports:
+    - name: http
+      port: 80
+      targetPort: 4180
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy-ingress
+  namespace: bushfire-plan
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: bfp.b30.online
+    http:
+      paths:
+      - path: /oauth2/
+        pathType: Prefix
+        backend:
+          service:
+            name: oauth2-proxy
+            port:
+              number: 80

@@ -101,3 +101,11 @@ HeadersList {
 }
 
 ```
+
+## Upgrade of Next.js
+Upgrade of Next.js was carried out using:
+```bash
+npm install next@16.0.7 react@latest react-dom@latest
+npm install -D @types/react@latest @types/react-dom@latest
+npx @next/codemod@canary upgrade latest
+```
